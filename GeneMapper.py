@@ -17,6 +17,13 @@ class GeneMapper:
     def __init__(self):
         self.u = UniProt(verbose=False)
 
+    '''
+    Map genes from orig_cols to dest_cols. orig_cols and dest_cols length must be the same.
+    If dest_cols are not in the dataframe, they will be created.
+    WARNING: if Uniprot mapping function returns multiple results for a gene,
+    the gene will be map to first result. Because of this it recommended to use
+    Uniprot ID, Biogrid ID or String ID which have unique results.
+    '''
     def map_genes(self, fr, to, df, orig_cols, dest_cols):
         # Get list of genes that we need to map.
         genes_set = set()
@@ -31,6 +38,10 @@ class GeneMapper:
         return self.add_mapping_to_df(df, final_map_dict, orig_cols, dest_cols)
 
 
+    '''
+    Map orig_cols to dest_cols using mapping dictionary. This can be used for any
+    purpose, not only genes.
+    '''
     def add_mapping_to_df(self, df, mapping_dictionary, orig_cols, dest_cols):
         print('Mapping df...')
 
