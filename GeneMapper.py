@@ -18,27 +18,6 @@ class GeneMapper:
         self.u = UniProt(verbose=False)
 
     '''
-    Map genes from orig_cols to dest_cols. orig_cols and dest_cols length must be the same.
-    If dest_cols are not in the dataframe, they will be created.
-    WARNING: if Uniprot mapping function returns multiple results for a gene,
-    the gene will be map to first result. Because of this it recommended to use
-    Uniprot ID, Biogrid ID or String ID which have unique results.
-    '''
-    def map_genes(self, fr, to, df, orig_cols, dest_cols):
-        # Get list of genes that we need to map.
-        genes_set = set()
-        for oc in orig_cols:
-            genes_set.update(set(df[oc].unique()))
-
-        map_bio_acc = self.u.mapping(fr=fr, to=to, query=' '.join(map(str, genes_set)))
-        final_map_dict = {}
-        for k, v in map_bio_acc.items():
-            final_map_dict[k] = v[0]
-
-        return self.add_mapping_to_df(df, final_map_dict, orig_cols, dest_cols)
-
-
-    '''
     Map orig_cols to dest_cols using mapping dictionary. This can be used for any
     purpose, not only genes.
     '''
@@ -65,9 +44,35 @@ class GeneMapper:
 
             # We map every column on orig_cols.
             for o in range(0, len(orig_cols)):
-                if mapping_dictionary.get(t[orig_idx[o]]) != None:
-                    df.at[t[0], dest_cols[o]] = mapping_dictionary.get(t[orig_idx[o]])
+                if mapping_dictionary.get(str(t[orig_idx[o]])) != None:
+                    df.at[t[0], dest_cols[o]] = mapping_dictionary.get(str(t[orig_idx[o]]))
                 else:
                     df.at[t[0], dest_cols[o]] = '?'
 
         return df
+
+    '''
+    Map genes from orig_cols to dest_cols. orig_cols and dest_cols length must be the same.
+    If dest_cols are not in the dataframe, they will be created.
+    WARNING: if Uniprot mapping function returns multiple results for a gene,
+    the gene will be map to first result. Because of this it recommended to use
+    Uniprot ID, Biogrid ID or String ID which have unique results.
+    '''
+    def map_genes(self, fr, to, df, orig_cols, dest_cols):
+        # Get list of genes that we need to map.
+        genes_set = set()
+        for oc in orig_cols:
+            genes_set.update(set(df[oc].unique()))
+
+        map_bio_acc = self.u.mapping(fr=fr, to=to, query=' '.join(map(str, genes_set)))
+        final_map_dict = {}
+        multiple_results = []
+        for k, v in map_bio_acc.items():
+            if len(v) > 1:
+                multiple_results.append(k)
+            final_map_dict[k] = v[0]
+
+        if len(multiple_results) > 0:
+            print("Warning: multiple mapping results were found for: " + ', '.join(multiple_results))
+
+        return self.add_mapping_to_df(df, final_map_dict, orig_cols, dest_cols)
